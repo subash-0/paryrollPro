@@ -66,7 +66,7 @@ export function EmployeeForm({ isOpen, onClose, employeeId }: EmployeeFormProps)
       bankName: '',
       accountNumber: '',
       routingNumber: '',
-      baseSalary: undefined as any,
+      baseSalary: '' as any,
       joinDate: new Date().toISOString().split('T')[0],
       status: 'active',
       firstName: '',
@@ -87,7 +87,7 @@ export function EmployeeForm({ isOpen, onClose, employeeId }: EmployeeFormProps)
         email: employee.user.email,
         isNewUser: false,
         userId: employee.userId,
-        baseSalary: employee.baseSalary ? Number(employee.baseSalary) : undefined,
+        baseSalary: employee.baseSalary || undefined,
         departmentId: employee.departmentId ? Number(employee.departmentId) : undefined,
         joinDate: new Date(employee.joinDate).toISOString().split('T')[0],
       });
@@ -282,7 +282,7 @@ export function EmployeeForm({ isOpen, onClose, employeeId }: EmployeeFormProps)
                           min="0"
                           className="pl-8"
                           {...field} 
-                          onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
+                          onChange={(e) => field.onChange(e.target.value === '' ? undefined : e.target.value)}
                           disabled={isLoading} 
                         />
                       </div>
