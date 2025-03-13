@@ -1,0 +1,82 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 96.1%;
+    --foreground: 222.2 47.4% 11.2%;
+    
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 47.4% 11.2%;
+    
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 47.4% 11.2%;
+    
+    --sidebar-background: 222.2 47.4% 11.2%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 210 40% 98%;
+    --sidebar-primary-foreground: 222.2 47.4% 11.2%;
+    --sidebar-accent: 217.2 32.6% 17.5%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 214.3 31.8% 25.5%;
+    --sidebar-ring: 217.2 32.6% 17.5%;
+    
+    --primary: 212 100% 45%;
+    --primary-foreground: 0 0% 100%;
+    
+    --secondary: 319 100% 48%;
+    --secondary-foreground: 0 0% 100%;
+    
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
+    
+    --radius: 0.5rem;
+    
+    --chart-1: 212 100% 45%;
+    --chart-2: 319 100% 48%;
+    --chart-3: 199 89% 48%;
+    --chart-4: 33 93% 54%;
+    --chart-5: 123 46% 48%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+}
+
+@layer components {
+  .sidebar-link {
+    @apply flex items-center p-2 rounded text-white hover:bg-gray-700;
+  }
+  
+  .sidebar-link.active {
+    @apply bg-primary text-white;
+  }
+  
+  .success-badge {
+    @apply px-2 py-1 rounded-full text-xs bg-[#4caf50]/20 text-[#4caf50];
+  }
+  
+  .pending-badge {
+    @apply px-2 py-1 rounded-full text-xs bg-[#ff9800]/20 text-[#ff9800];
+  }
+  
+  .error-badge {
+    @apply px-2 py-1 rounded-full text-xs bg-[#f44336]/20 text-[#f44336];
+  }
+}
