@@ -416,9 +416,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Error handling
-  app.use(errorHandler);
-  app.use('*', notFound);
+  // Error handling - only for API routes
+  app.use('/api/*', errorHandler);
+  app.use('/api/*', notFound);
   
   const httpServer = createServer(app);
   return httpServer;

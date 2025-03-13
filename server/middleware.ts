@@ -42,7 +42,14 @@ export function errorHandler(err: any, req: Request, res: Response, next: NextFu
 
 // Not found middleware
 export function notFound(req: Request, res: Response) {
-  res.status(404).json({ message: 'Route not found' });
+  // Only respond with 404 for API routes, let client-side routing handle the rest
+  if (req.path.startsWith('/api')) {
+    res.status(404).json({ message: 'API route not found' });
+  } else {
+    // For client routes, we'll just return a 404 with a clear message
+    // The client-side routing should be handled by the vite middleware
+    res.status(404).json({ message: 'Route not found' });
+  }
 }
 
 // Transaction handling middleware
