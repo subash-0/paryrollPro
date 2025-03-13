@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -82,7 +82,7 @@ export function PayrollForm({ isOpen, onClose, payrollId, employeeId }: PayrollF
   const watchOtherDeductions = form.watch('otherDeductions');
   const watchBonuses = form.watch('bonuses');
   
-  useState(() => {
+  useEffect(() => {
     // Calculate net amount: gross + bonuses - taxes - other deductions
     const netAmount = (
       watchGrossAmount + 
@@ -94,10 +94,10 @@ export function PayrollForm({ isOpen, onClose, payrollId, employeeId }: PayrollF
     if (netAmount >= 0) {
       form.setValue('netAmount', netAmount);
     }
-  });
+  }, [watchGrossAmount, watchBonuses, watchTaxDeductions, watchOtherDeductions, form]);
   
   // Update form when payroll data is loaded
-  useState(() => {
+  useEffect(() => {
     if (payroll) {
       const deductionDetails = payroll.details?.deductionDetails || '';
       
@@ -111,7 +111,7 @@ export function PayrollForm({ isOpen, onClose, payrollId, employeeId }: PayrollF
         deductionDetails,
       });
     }
-  });
+  }, [payroll, form]);
   
   // If an employee is selected, get their base salary as default gross amount
   const handleEmployeeChange = (employeeId: number) => {

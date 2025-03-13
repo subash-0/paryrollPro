@@ -27,8 +27,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create payroll_summary_view for dashboard
   try {
     await database.withTransaction(async (client) => {
+      // First drop the view if it exists
+      await client.query(`DROP VIEW IF EXISTS payroll_summary_view;`);
+      
+      // Then create the view
       await client.query(`
-        CREATE OR REPLACE VIEW payroll_summary_view AS
+        CREATE VIEW payroll_summary_view AS
         SELECT 
           month, 
           year, 
@@ -52,13 +56,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create payroll_details_view for detailed reporting
   try {
     await database.withTransaction(async (client) => {
+      // First drop the view if it exists
+      await client.query(`DROP VIEW IF EXISTS payroll_details_view;`);
+      
+      // Then create the view with proper column names
       await client.query(`
-        CREATE OR REPLACE VIEW payroll_details_view AS
+        CREATE VIEW payroll_details_view AS
         SELECT 
-          p.id as payroll_id,
+          p.id,
           p.month,
           p.year,
-          p.status as payroll_status,
+          p.status,
           p.gross_amount,
           p.tax_deductions,
           p.other_deductions,
@@ -147,8 +155,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create payslip generation function
   try {
     await database.withTransaction(async (client) => {
+      // First drop the function if it exists
+      await client.query(`DROP FUNCTION IF EXISTS generate_payslip(INTEGER);`);
+      
+      // Then create the function
       await client.query(`
-        CREATE OR REPLACE FUNCTION generate_payslip(p_payroll_id INTEGER)
+        CREATE FUNCTION generate_payslip(p_payroll_id INTEGER)
         RETURNS JSON AS $$
         DECLARE
           payslip_data JSON;
