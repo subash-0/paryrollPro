@@ -156,7 +156,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.post('/api/employees', authenticate, authorizeAdmin, withTransaction(async (req, res) => {
+  app.post('/api/employees', authenticate, withTransaction(async (req, res) => {
     try {
       let userId = req.body.userId;
       
