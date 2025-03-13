@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
-import { storage } from './storage';
+import { database } from './database'; // Changed from storage to database
 import { InsertUser, LoginUser, User } from '@shared/schema';
 
 // JWT secret key - in a real app, should be in environment variables
@@ -42,7 +42,7 @@ export function verifyToken(token: string): any {
 // Register a new user
 export async function registerUser(userData: InsertUser): Promise<User> {
   // Check if username already exists
-  const existingUser = await storage.getUserByUsername(userData.username);
+  const existingUser = await database.getUserByUsername(userData.username);
   if (existingUser) {
     throw new Error('Username already exists');
   }
@@ -51,7 +51,7 @@ export async function registerUser(userData: InsertUser): Promise<User> {
   const hashedPassword = await hashPassword(userData.password);
   
   // Create the user with hashed password
-  const user = await storage.createUser({
+  const user = await database.createUser({
     ...userData,
     password: hashedPassword
   });
@@ -61,7 +61,7 @@ export async function registerUser(userData: InsertUser): Promise<User> {
 
 // Login user
 export async function loginUser(loginData: LoginUser): Promise<{ user: User, token: string }> {
-  const user = await storage.getUserByUsername(loginData.username);
+  const user = await database.getUserByUsername(loginData.username);
   if (!user) {
     throw new Error('Invalid username or password');
   }
