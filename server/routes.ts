@@ -24,6 +24,222 @@ const withTransaction = (handler: (req: Request, res: Response, next: NextFuncti
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Create payroll_summary_view for dashboard
+  try {
+    await database.withTransaction(async (client) => {
+      await client.query(`
+        CREATE OR REPLACE VIEW payroll_summary_view AS
+        SELECT 
+          month, 
+          year, 
+          COUNT(*) as payroll_count,
+          SUM(CAST(net_amount AS DECIMAL)) as total_payroll,
+          AVG(CAST(net_amount AS DECIMAL)) as average_payroll,
+          (
+            SELECT AVG(CAST(base_salary AS DECIMAL))
+            FROM employees
+            WHERE status = 'active'
+          ) as average_salary
+        FROM payrolls
+        GROUP BY month, year;
+      `);
+      console.log("Payroll summary view created successfully");
+    });
+  } catch (error) {
+    console.error("Failed to create payroll summary view:", error);
+  }
+  
+  // Create payroll_details_view for detailed reporting
+  try {
+    await database.withTransaction(async (client) => {
+      await client.query(`
+        CREATE OR REPLACE VIEW payroll_details_view AS
+        SELECT 
+          p.id as payroll_id,
+          p.month,
+          p.year,
+          p.status as payroll_status,
+          p.gross_amount,
+          p.tax_deductions,
+          p.other_deductions,
+          p.bonuses,
+          p.net_amount,
+          p.processed_at,
+          e.id as employee_id,
+          e.position,
+          e.base_salary,
+          e.status as employee_status,
+          u.first_name,
+          u.last_name,
+          u.email,
+          d.name as department_name
+        FROM payrolls p
+        JOIN employees e ON p.employee_id = e.id
+        JOIN users u ON e.user_id = u.id
+        JOIN departments d ON e.department_id = d.id;
+      `);
+      console.log("Payroll details view created successfully");
+    });
+  } catch (error) {
+    console.error("Failed to create payroll details view:", error);
+  }
+  
+  // Create trigger to validate payroll data before insert
+  try {
+    await database.withTransaction(async (client) => {
+      // Create validation function
+      await client.query(`
+        CREATE OR REPLACE FUNCTION validate_payroll_data()
+        RETURNS TRIGGER AS $$
+        BEGIN
+          -- Check if employee exists and is active
+          IF NOT EXISTS (
+            SELECT 1 FROM employees 
+            WHERE id = NEW.employee_id AND status = 'active'
+          ) THEN
+            RAISE EXCEPTION 'Employee ID % does not exist or is not active', NEW.employee_id;
+          END IF;
+          
+          -- Validate month and year
+          IF NEW.month < 1 OR NEW.month > 12 THEN
+            RAISE EXCEPTION 'Invalid month: %', NEW.month;
+          END IF;
+          
+          IF NEW.year < 2000 OR NEW.year > 2100 THEN
+            RAISE EXCEPTION 'Invalid year: %', NEW.year;
+          END IF;
+          
+          -- Validate amounts are numeric and positive
+          IF CAST(NEW.gross_amount AS DECIMAL) <= 0 THEN
+            RAISE EXCEPTION 'Gross amount must be positive';
+          END IF;
+          
+          -- Set default status if not provided
+          IF NEW.status IS NULL THEN
+            NEW.status := 'pending';
+          END IF;
+          
+          -- Set processed_at timestamp for completed payrolls
+          IF NEW.status = 'completed' AND NEW.processed_at IS NULL THEN
+            NEW.processed_at := CURRENT_TIMESTAMP;
+          END IF;
+          
+          RETURN NEW;
+        END;
+        $$ LANGUAGE plpgsql;
+      `);
+      
+      // Create or replace the trigger
+      await client.query(`
+        DROP TRIGGER IF EXISTS validate_payroll_before_insert ON payrolls;
+        CREATE TRIGGER validate_payroll_before_insert
+        BEFORE INSERT ON payrolls
+        FOR EACH ROW
+        EXECUTE FUNCTION validate_payroll_data();
+      `);
+      
+      console.log("Payroll validation trigger created successfully");
+    });
+  } catch (error) {
+    console.error("Failed to create payroll validation trigger:", error);
+  }
+  
+  // Create payslip generation function
+  try {
+    await database.withTransaction(async (client) => {
+      await client.query(`
+        CREATE OR REPLACE FUNCTION generate_payslip(p_payroll_id INTEGER)
+        RETURNS JSON AS $$
+        DECLARE
+          payslip_data JSON;
+        BEGIN
+          SELECT json_build_object(
+            'payroll_id', p.id,
+            'employee', json_build_object(
+              'id', e.id,
+              'name', u.first_name || ' ' || u.last_name,
+              'position', e.position,
+              'department', d.name,
+              'email', u.email
+            ),
+            'payment', json_build_object(
+              'month', p.month,
+              'year', p.year,
+              'gross_amount', p.gross_amount,
+              'tax_deductions', p.tax_deductions,
+              'other_deductions', p.other_deductions,
+              'bonuses', p.bonuses,
+              'net_amount', p.net_amount
+            ),
+            'details', p.details,
+            'processed_at', p.processed_at,
+            'status', p.status
+          ) INTO payslip_data
+          FROM payrolls p
+          JOIN employees e ON p.employee_id = e.id
+          JOIN users u ON e.user_id = u.id
+          JOIN departments d ON e.department_id = d.id
+          WHERE p.id = p_payroll_id;
+          
+          RETURN payslip_data;
+        END;
+        $$ LANGUAGE plpgsql;
+      `);
+      
+      console.log("Payslip generation function created successfully");
+    });
+  } catch (error) {
+    console.error("Failed to create payslip generation function:", error);
+  }
+  
+  // Create payroll processing function
+  try {
+    await database.withTransaction(async (client) => {
+      await client.query(`
+        CREATE OR REPLACE FUNCTION process_payroll(
+          p_employee_id INTEGER,
+          p_month INTEGER,
+          p_year INTEGER,
+          p_gross_amount VARCHAR,
+          p_tax_deductions VARCHAR,
+          p_other_deductions VARCHAR DEFAULT NULL,
+          p_bonuses VARCHAR DEFAULT NULL,
+          p_details JSONB DEFAULT NULL,
+          p_processed_by INTEGER DEFAULT NULL
+        ) RETURNS INTEGER AS $$
+        DECLARE
+          payroll_id INTEGER;
+          net_amount DECIMAL;
+        BEGIN
+          -- Calculate net amount
+          net_amount := CAST(p_gross_amount AS DECIMAL) - 
+                       CAST(COALESCE(p_tax_deductions, '0') AS DECIMAL) -
+                       CAST(COALESCE(p_other_deductions, '0') AS DECIMAL) +
+                       CAST(COALESCE(p_bonuses, '0') AS DECIMAL);
+          
+          -- Create payroll record (validation happens via trigger)
+          INSERT INTO payrolls (
+            employee_id, month, year, 
+            gross_amount, tax_deductions, other_deductions, 
+            bonuses, net_amount, details, 
+            status, processed_by, processed_at
+          ) VALUES (
+            p_employee_id, p_month, p_year,
+            p_gross_amount, p_tax_deductions, p_other_deductions,
+            p_bonuses, net_amount::VARCHAR, p_details,
+            'completed', p_processed_by, CURRENT_TIMESTAMP
+          ) RETURNING id INTO payroll_id;
+          
+          RETURN payroll_id;
+        END;
+        $$ LANGUAGE plpgsql;
+      `);
+      
+      console.log("Payroll processing function created successfully");
+    });
+  } catch (error) {
+    console.error("Failed to create payroll processing function:", error);
+  }
   // Middleware
   app.use(cookieParser());
   
@@ -307,6 +523,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: error.message });
     }
   }));
+  
+  // Dashboard routes
+  app.get('/api/dashboard', authenticate, async (req, res) => {
+    try {
+      const summary = await database.getDashboardSummary();
+      const departmentDistribution = await database.getDepartmentDistribution();
+      
+      res.json({
+        summary,
+        departmentDistribution
+      });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  // SQL Advanced Feature routes
+  app.post('/api/sql/process-monthly-payroll', authenticate, authorizeAdmin, async (req, res) => {
+    try {
+      const { month, year } = req.body;
+      
+      if (!month || !year) {
+        return res.status(400).json({ message: 'Month and year are required' });
+      }
+      
+      // Use our transaction with savepoints to process payrolls
+      const results = await database.processMonthlyPayroll(month, year, req.user!.userId);
+      
+      res.json({
+        message: 'Monthly payroll processed successfully',
+        results
+      });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  app.post('/api/sql/setup-access-controls', authenticate, authorizeAdmin, async (req, res) => {
+    try {
+      // Use our DCL function to set up payroll access controls
+      await database.setupPayrollAccessControls();
+      
+      res.json({
+        message: 'Payroll access controls set up successfully'
+      });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  app.get('/api/sql/generate-payslip/:id', authenticate, async (req, res) => {
+    try {
+      const payrollId = parseInt(req.params.id);
+      
+      // Call the payslip generation function directly from PostgreSQL
+      const result = await database.withTransaction(async (client) => {
+        const payslipQuery = await client.query(
+          `SELECT generate_payslip($1) as payslip`,
+          [payrollId]
+        );
+        
+        return payslipQuery.rows[0].payslip;
+      });
+      
+      if (!result) {
+        return res.status(404).json({ message: 'Payroll not found' });
+      }
+      
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
   
   // Payroll routes
   app.get('/api/payrolls', authenticate, async (req, res) => {

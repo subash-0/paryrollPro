@@ -1000,20 +1000,52 @@ export class SQLDatabase {
       const currentMonth = currentDate.getMonth() + 1;
       const currentYear = currentDate.getFullYear();
       
-      const payrollSum = await client.query(`
-        SELECT COALESCE(SUM(CAST(net_amount AS DECIMAL)), 0) AS total
-        FROM payrolls
-        WHERE month = $1 AND year = $2
-      `, [currentMonth, currentYear]);
-      const totalPayroll = parseFloat(payrollSum.rows[0].total);
-      
-      // Calculate average salary
-      const avgSalary = await client.query(`
-        SELECT COALESCE(AVG(CAST(base_salary AS DECIMAL)), 0) AS average
-        FROM employees
-        WHERE status = 'active'
-      `);
-      const averageSalary = parseFloat(avgSalary.rows[0].average);
+      // Try using payroll_summary_view if it exists
+      let totalPayroll, averageSalary;
+      try {
+        // Get data from our specialized view
+        const summaryView = await client.query(`
+          SELECT * FROM payroll_summary_view
+          WHERE month = $1 AND year = $2
+        `, [currentMonth, currentYear]);
+        
+        if (summaryView.rows.length > 0) {
+          totalPayroll = parseFloat(summaryView.rows[0].total_payroll || '0');
+          averageSalary = parseFloat(summaryView.rows[0].average_salary || '0');
+        } else {
+          // Fallback to standard queries if no data for current month/year
+          const payrollSum = await client.query(`
+            SELECT COALESCE(SUM(CAST(net_amount AS DECIMAL)), 0) AS total
+            FROM payrolls
+            WHERE month = $1 AND year = $2
+          `, [currentMonth, currentYear]);
+          totalPayroll = parseFloat(payrollSum.rows[0].total);
+          
+          // Calculate average salary
+          const avgSalary = await client.query(`
+            SELECT COALESCE(AVG(CAST(base_salary AS DECIMAL)), 0) AS average
+            FROM employees
+            WHERE status = 'active'
+          `);
+          averageSalary = parseFloat(avgSalary.rows[0].average);
+        }
+      } catch (error) {
+        // If view doesn't exist, fallback to standard queries
+        const payrollSum = await client.query(`
+          SELECT COALESCE(SUM(CAST(net_amount AS DECIMAL)), 0) AS total
+          FROM payrolls
+          WHERE month = $1 AND year = $2
+        `, [currentMonth, currentYear]);
+        totalPayroll = parseFloat(payrollSum.rows[0].total);
+        
+        // Calculate average salary
+        const avgSalary = await client.query(`
+          SELECT COALESCE(AVG(CAST(base_salary AS DECIMAL)), 0) AS average
+          FROM employees
+          WHERE status = 'active'
+        `);
+        averageSalary = parseFloat(avgSalary.rows[0].average);
+      }
       
       // Count pending payrolls
       const pendingCount = await client.query(`
@@ -1150,6 +1182,39 @@ export class SQLDatabase {
       ROLLBACK TO before_change;
       COMMIT;
     `);
+  }
+  
+  // Advanced transaction with savepoints - Process monthly payroll
+  async processMonthlyPayroll(month: number, year: number, processedBy: number): Promise<any[]> {
+    return this.withTransaction(async (client) => {
+      try {
+        // Call our PostgreSQL function directly
+        const result = await client.query(
+          `SELECT * FROM process_monthly_payroll($1, $2, $3)`,
+          [month, year, processedBy]
+        );
+        
+        return result.rows;
+      } catch (error: any) {
+        console.error('Error processing monthly payroll:', error.message);
+        throw new Error(`Failed to process monthly payroll: ${error.message}`);
+      }
+    });
+  }
+  
+  // Setup payroll access controls using DCL
+  async setupPayrollAccessControls(): Promise<void> {
+    return this.withTransaction(async (client) => {
+      try {
+        // Call our PostgreSQL function directly
+        await client.query(`SELECT setup_payroll_access_controls()`);
+        
+        return;
+      } catch (error: any) {
+        console.error('Error setting up payroll access controls:', error.message);
+        throw new Error(`Failed to set up payroll access controls: ${error.message}`);
+      }
+    });
   }
 }
 
