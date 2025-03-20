@@ -35,7 +35,7 @@ export function EmployeeTable() {
   const [employeeToDelete, setEmployeeToDelete] = useState<number | null>(null);
   
   const { data: employees = [], isLoading } = useQuery<EmployeeWithDetails[]>({
-    queryKey: ['/api/employees'],
+    queryKey: ['http://localhost:5000/api/employees'],
   });
   
   const filteredEmployees = searchTerm 
@@ -60,14 +60,14 @@ export function EmployeeTable() {
     if (!employeeToDelete) return;
     
     try {
-      await apiRequest('DELETE', `/api/employees/${employeeToDelete}`, {});
+      await apiRequest('DELETE', `http://localhost:5000/api/employees/${employeeToDelete}`, {});
       setDeleteDialogOpen(false);
       setEmployeeToDelete(null);
       toast({
         title: "Success",
         description: "Employee has been deleted successfully",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/employees'] });
+      queryClient.invalidateQueries({ queryKey: ['http://localhost:5000/api/employees'] });
     } catch (error) {
       toast({
         title: "Error",

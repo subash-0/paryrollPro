@@ -46,18 +46,20 @@ export function PayrollForm({ isOpen, onClose, payrollId, employeeId }: PayrollF
   
   // Fetch employees for dropdown
   const { data: employees, isLoading: isEmployeesLoading } = useQuery<EmployeeWithDetails[]>({
-    queryKey: ['/api/employees'],
+    queryKey: ['http://localhost:5000/api/employees'],
     enabled: isOpen,
   });
   
   // Fetch payroll data if editing
   const { data: payroll, isLoading: isPayrollLoading } = useQuery({
-    queryKey: ['/api/payrolls', payrollId],
+    queryKey: ['http://localhost:5000/api/payrolls', payrollId],
     enabled: !!payrollId && isOpen,
   });
-  
+
   const title = payrollId ? 'Edit Payroll' : 'Process New Payroll';
-  
+
+ const filterdPayroll = payroll?.filter((payroll) => payroll.id === payrollId);
+ 
   const form = useForm<PayrollFormValues>({
     resolver: zodResolver(payrollFormSchema),
     defaultValues: {
@@ -98,16 +100,16 @@ export function PayrollForm({ isOpen, onClose, payrollId, employeeId }: PayrollF
   
   // Update form when payroll data is loaded
   useEffect(() => {
-    if (payroll) {
-      const deductionDetails = payroll.details?.deductionDetails || '';
+    if (filterdPayroll) {
+      const deductionDetails = filterdPayroll[0].details?.deductionDetails || '';
       
       form.reset({
-        ...payroll,
-        grossAmount: Number(payroll.grossAmount),
-        taxDeductions: Number(payroll.taxDeductions),
-        otherDeductions: Number(payroll.otherDeductions),
-        netAmount: Number(payroll.netAmount),
-        bonuses: Number(payroll.bonuses),
+        ...filterdPayroll[0],
+        grossAmount: filterdPayroll[0].grossAmount,
+        taxDeductions: filterdPayroll.taxDeductions,
+        otherDeductions: filterdPayroll[0].otherDeductions,
+        netAmount: filterdPayroll[0].netAmount,
+        bonuses: filterdPayroll[0].bonuses,
         deductionDetails,
       });
     }
@@ -146,12 +148,19 @@ export function PayrollForm({ isOpen, onClose, payrollId, employeeId }: PayrollF
           processedDate: new Date().toISOString(),
         },
       };
-      
-      await apiRequest('POST', '/api/payrolls', formattedData);
+      const processedData = {
+        ...formattedData,
+        grossAmount: String(formattedData.grossAmount),
+        taxDeductions: String(formattedData.taxDeductions),
+        otherDeductions: String(formattedData.otherDeductions),
+        netAmount: String(formattedData.netAmount),
+        bonuses: String(formattedData.bonuses),
+      };
+      await apiRequest('POST', 'http://localhost:5000/api/payrolls', processedData);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/payrolls'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/employees'] });
+      queryClient.invalidateQueries({ queryKey: ['http://localhost:5000/api/payrolls'] });
+      queryClient.invalidateQueries({ queryKey: ['http://localhost:5000/api/employees'] });
       toast({
         title: "Success",
         description: "Payroll has been processed successfully",
@@ -182,11 +191,11 @@ export function PayrollForm({ isOpen, onClose, payrollId, employeeId }: PayrollF
         },
       };
       
-      await apiRequest('PATCH', `/api/payrolls/${payrollId}`, formattedData);
+      await apiRequest('PATCH', `http://localhost:5000/api/payrolls/${payrollId}`, formattedData);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/payrolls'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/payrolls', payrollId] });
+      queryClient.invalidateQueries({ queryKey: ['http://localhost:5000/api/payrolls'] });
+      queryClient.invalidateQueries({ queryKey: ['http://localhost:5000/api/payrolls', payrollId] });
       toast({
         title: "Success",
         description: "Payroll has been updated successfully",

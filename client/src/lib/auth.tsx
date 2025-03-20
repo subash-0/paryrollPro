@@ -24,7 +24,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const checkAuth = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/api/auth/me', {
+        const response = await fetch('http://localhost:5000/api/auth/me', {
           credentials: 'include'
         });
         
@@ -45,9 +45,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = async (credentials: LoginUser): Promise<boolean> => {
     try {
       setLoading(true);
-      const response = await apiRequest('POST', '/api/auth/login', credentials);
+      const response = await apiRequest('POST', 'http://localhost:5000/api/auth/login', credentials);
       const userData = await response.json();
-      setUser(userData);
+      localStorage.setItem('user', JSON.stringify(userData));
+      setUser(userData || localStorage.getItem('user'));
       toast({
         title: "Login successful",
         description: `Welcome back, ${userData.firstName || userData.username}!`,
@@ -68,7 +69,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const register = async (userData: InsertUser): Promise<boolean> => {
     try {
       setLoading(true);
-      await apiRequest('POST', '/api/auth/register', userData);
+      await apiRequest('POST', 'http://localhost:5000/api/auth/register', userData);
       toast({
         title: "Registration successful",
         description: "Your account has been created. You can now log in.",
@@ -88,7 +89,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   
   const logout = async (): Promise<void> => {
     try {
-      await apiRequest('POST', '/api/auth/logout', {});
+      await apiRequest('POST', 'http://localhost:5000/api/auth/logout', {});
       setUser(null);
       toast({
         title: "Logged out",

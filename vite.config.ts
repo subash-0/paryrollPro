@@ -21,6 +21,7 @@ export default defineConfig({
           ),
         ]
       : []),
+      
   ],
   resolve: {
     alias: {
@@ -33,4 +34,10 @@ export default defineConfig({
     outDir: path.resolve(__dirname, "dist/public"),
     emptyOutDir: true,
   },
+  server:{
+    hmr:{
+      overlay:false
+    }
+  }
+  
 });

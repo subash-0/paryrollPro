@@ -76,6 +76,10 @@ export async function loginUser(loginData: LoginUser): Promise<{ user: User, tok
   return { user, token };
 }
 
+
+// change password
+
+
 // Authentication middleware
 export function authenticate(req: Request, res: Response, next: NextFunction) {
   try {

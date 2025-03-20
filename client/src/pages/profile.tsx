@@ -73,14 +73,14 @@ export default function Profile() {
   // Update profile mutation
   const updateProfileMutation = useMutation({
     mutationFn: async (data: ProfileFormValues) => {
-      await apiRequest('PATCH', `/api/users/${user?.id}`, data);
+      await apiRequest('PATCH', `http://localhost:5000/api/users/${user?.id}`, data);
     },
     onSuccess: () => {
       toast({
         title: "Profile updated",
         description: "Your profile information has been updated successfully.",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+      queryClient.invalidateQueries({ queryKey: ['http://localhost:5000/api/auth/me'] });
     },
     onError: (error) => {
       toast({
@@ -94,7 +94,7 @@ export default function Profile() {
   // Change password mutation
   const changePasswordMutation = useMutation({
     mutationFn: async (data: PasswordFormValues) => {
-      await apiRequest('POST', '/api/auth/change-password', {
+      await apiRequest('POST', 'http://localhost:5000/api/auth/change-password', {
         currentPassword: data.currentPassword,
         newPassword: data.newPassword,
       });

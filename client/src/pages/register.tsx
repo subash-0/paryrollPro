@@ -11,7 +11,7 @@ export default function Register() {
     // Redirect to dashboard if already authenticated
     if (isAuthenticated && !loading) {
       navigate('/dashboard');
-    }
+    } 
   }, [isAuthenticated, loading, navigate]);
   
   // Don't render anything while checking authentication

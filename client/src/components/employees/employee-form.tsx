@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import { z } from 'zod';
-import { insertEmployeeSchema, Department, User } from '@shared/schema';
+import { insertEmployeeSchema, Department, User, Employee } from '@shared/schema';
 import { useLocation } from 'wouter';
 
 // Extend the schema to include user details when creating a new employee
@@ -38,22 +38,24 @@ export function EmployeeForm({ isOpen, onClose, employeeId }: EmployeeFormProps)
   
   // Fetch departments for dropdown
   const { data: departments, isLoading: isDepartmentsLoading } = useQuery({
-    queryKey: ['/api/departments'],
+    queryKey: ['http://localhost:5000/api/departments'],
     enabled: isOpen,
   });
   
   // Fetch existing users for dropdown
   const { data: users, isLoading: isUsersLoading } = useQuery({
-    queryKey: ['/api/users'],
+    queryKey: ['http://localhost:5000/api/users'],
     enabled: isOpen,
   });
   
   // Fetch employee data if editing
-  const { data: employee, isLoading: isEmployeeLoading } = useQuery({
-    queryKey: ['/api/employees', employeeId],
+  const { data: employee, isLoading: isEmployeeLoading } = useQuery<Employee[]>({
+    queryKey: [`http://localhost:5000/api/employees/${employeeId}`, employeeId],
     enabled: !!employeeId && isOpen,
   });
+
   
+
   const title = employeeId ? 'Edit Employee' : 'Add New Employee';
   
   const form = useForm<EmployeeFormValues>({
@@ -77,6 +79,7 @@ export function EmployeeForm({ isOpen, onClose, employeeId }: EmployeeFormProps)
     },
   });
   
+ 
   // Update form when employee data is loaded
   useState(() => {
     if (employee && employee.user) {
@@ -96,7 +99,7 @@ export function EmployeeForm({ isOpen, onClose, employeeId }: EmployeeFormProps)
   
   const createMutation = useMutation({
     mutationFn: async (data: EmployeeFormValues) => {
-      await apiRequest('POST', '/api/employees', data);
+      await apiRequest('POST', 'http://localhost:5000/api/employees', data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/employees'] });
@@ -118,11 +121,11 @@ export function EmployeeForm({ isOpen, onClose, employeeId }: EmployeeFormProps)
   
   const updateMutation = useMutation({
     mutationFn: async (data: EmployeeFormValues) => {
-      await apiRequest('PATCH', `/api/employees/${employeeId}`, data);
+      await apiRequest('PATCH', `http://localhost:5000/api/employees/${employeeId}`, data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/employees'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/employees', employeeId] });
+      queryClient.invalidateQueries({ queryKey: ['http://localhost:5000/api/employees'] });
+      queryClient.invalidateQueries({ queryKey: [`http://localhost:5000/api/employees/${employeeId}`, employeeId] });
       toast({
         title: "Success",
         description: "Employee has been updated successfully",

@@ -44,17 +44,17 @@ export default function Reports() {
   
   // Fetch all payrolls
   const { data: payrolls = [], isLoading: isPayrollsLoading } = useQuery({
-    queryKey: ['/api/payrolls'],
+    queryKey: ['http://localhost:5000/api/payrolls'],
   });
   
   // Fetch all employees with details
   const { data: employees = [], isLoading: isEmployeesLoading } = useQuery({
-    queryKey: ['/api/employees'],
+    queryKey: ['http://localhost:5000/api/employees'],
   });
   
   // Fetch departments
   const { data: departments = [], isLoading: isDepartmentsLoading } = useQuery({
-    queryKey: ['/api/dashboard/departments'],
+    queryKey: ['http://localhost:5000/api/dashboard/departments'],
   });
   
   const toggleSidebar = () => {

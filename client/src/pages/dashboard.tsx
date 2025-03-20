@@ -24,17 +24,17 @@ export default function Dashboard() {
   
   // Fetch dashboard summary data
   const { data: summary, isLoading: isSummaryLoading } = useQuery({
-    queryKey: ['/api/dashboard/summary'],
+    queryKey: ['http://localhost:5000/api/dashboard/summary'],
   });
   
   // Fetch department distribution data
   const { data: departments, isLoading: isDepartmentsLoading } = useQuery({
-    queryKey: ['/api/dashboard/departments'],
+    queryKey: ['http://localhost:5000/api/dashboard/departments'],
   });
   
   // Fetch recent payroll activities
   const { data: recentPayrolls, isLoading: isPayrollsLoading } = useQuery<PayrollWithDetails[]>({
-    queryKey: ['/api/payrolls/recent'],
+    queryKey: ['http://localhost:5000/api/payrolls/recent'],
   });
   
   const toggleSidebar = () => {

@@ -49,18 +49,25 @@ export default function Payroll({ id, employeeId }: PayrollProps) {
   
   const isPayslipView = !!id;
   const isEmployeePayrollView = !!employeeId;
-  
+ 
   // Fetch payrolls
   const { data: payrolls = [], isLoading: isPayrollsLoading } = useQuery<PayrollWithDetails[]>({
-    queryKey: isEmployeePayrollView ? ['/api/payrolls/employee', employeeId] : ['/api/payrolls'],
+    queryKey: isEmployeePayrollView ? [`http://localhost:5000/api/payrolls/employees`, employeeId] : ['http://localhost:5000/api/payrolls/recent'],
     enabled: !isPayslipView
   });
   
+
+  console.log(payrolls);
+
+
+
   // Fetch employee if viewing employee payrolls
   const { data: employee, isLoading: isEmployeeLoading } = useQuery({
-    queryKey: ['/api/employees', employeeId],
+    queryKey: [`http://localhost:5000/api/employees/${employeeId}`, employeeId],
     enabled: isEmployeePayrollView
   });
+
+
   
   const toggleSidebar = () => {
     setSidebarCollapsed(!sidebarCollapsed);
@@ -90,16 +97,16 @@ export default function Payroll({ id, employeeId }: PayrollProps) {
     if (!payrollToDelete) return;
     
     try {
-      await apiRequest('DELETE', `/api/payrolls/${payrollToDelete}`, {});
+      await apiRequest('DELETE', `http://localhost:5000/api/payrolls/${payrollToDelete}`, {});
       setDeleteDialogOpen(false);
       setPayrollToDelete(null);
       toast({
         title: "Success",
         description: "Payroll record has been deleted successfully",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/payrolls'] });
+      queryClient.invalidateQueries({ queryKey: ['http://localhost:5000/api/payrolls'] });
       if (isEmployeePayrollView) {
-        queryClient.invalidateQueries({ queryKey: ['/api/payrolls/employee', employeeId] });
+        queryClient.invalidateQueries({ queryKey: [`http://localhost:5000/api/payrolls/employee/${employeeId}`, employeeId] });
       }
     } catch (error) {
       toast({
@@ -151,7 +158,7 @@ export default function Payroll({ id, employeeId }: PayrollProps) {
     navigate('/login');
     return null;
   }
-  
+
   return (
     <div className="h-screen flex overflow-hidden">
       <Sidebar isCollapsed={sidebarCollapsed} onToggle={toggleSidebar} />
@@ -241,6 +248,7 @@ export default function Payroll({ id, employeeId }: PayrollProps) {
                               <div>
                                 <h3 className="font-medium">
                                   {payroll.employee?.user?.firstName} {payroll.employee?.user?.lastName}
+                                 
                                 </h3>
                                 <div className="flex text-sm text-muted-foreground">
                                   <span>{payroll.employee?.department?.name}</span>

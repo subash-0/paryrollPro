@@ -19,9 +19,10 @@ export default function EmployeeDetails({ id }: EmployeeDetailsProps) {
   const isNewEmployee = !id;
   
   const { data: employee, isLoading: isEmployeeLoading } = useQuery({
-    queryKey: ['/api/employees', id],
+    queryKey: ['http://localhost:5000/api/employees', id],
     enabled: !!id,
   });
+  
   
   const toggleSidebar = () => {
     setSidebarCollapsed(!sidebarCollapsed);

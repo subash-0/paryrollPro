@@ -2,10 +2,15 @@ import pg from 'pg';
 const { Pool } = pg;
 type PoolClient = pg.PoolClient;
 import { User, Department, Employee, Payroll, InsertUser, InsertDepartment, InsertEmployee, InsertPayroll, EmployeeWithDetails, PayrollWithDetails } from '@shared/schema';
+import dotenv from 'dotenv';
+dotenv.config();
 
 // Create connection pool
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL
+  connectionString: process.env.DATABASE_URL,
+  ssl:{
+    rejectUnauthorized: false
+  }
 });
 
 // Test connection
@@ -852,7 +857,7 @@ export class SQLDatabase {
         const otherDeductions = payroll.otherDeductions ? parseFloat(payroll.otherDeductions) : 0;
         const bonuses = payroll.bonuses ? parseFloat(payroll.bonuses) : 0;
         
-        netAmount = (grossAmount - taxDeductions - otherDeductions + bonuses).toString();
+        netAmount = (grossAmount - taxDeductions - otherDeductions + bonuses);
       }
       
       const result = await client.query(`

@@ -306,6 +306,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+
+
+
   // User routes
   app.get('/api/users', authenticate, authorizeAdmin, async (req, res) => {
     try {
@@ -320,6 +323,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: error.message });
     }
   });
+
+  app.patch('/api/users/:id', authenticate, authorizeAdmin, withTransaction(async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const user = await database.updateUser(userId, req.body);
+      
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      
+      // Remove password from response
+      const { password, ...userWithoutPassword } = user;
+      res.json(userWithoutPassword);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  }
+  ));
   
   // Department routes
   app.get('/api/departments', authenticate, async (req, res) => {
@@ -401,6 +422,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // If creating a new user
       if (req.body.isNewUser && !userId) {
+
+
         // Create user first
         const hashedPassword = await import('./auth').then(auth => 
           auth.hashPassword(req.body.lastName.toLowerCase() + "123") // Default password

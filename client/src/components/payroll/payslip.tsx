@@ -1,20 +1,27 @@
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Separator } from '@/components/ui/separator';
-import { PayrollWithDetails } from '@shared/schema';
+import { employees, PayrollWithDetails } from '@shared/schema';
 import { FileDown, Printer } from 'lucide-react';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 interface PayslipProps {
   payrollId: number;
 }
 
 export function Payslip({ payrollId }: PayslipProps) {
+  const divRef = useRef<HTMLDivElement>(null);
+ 
   const { data: payroll, isLoading } = useQuery<PayrollWithDetails>({
-    queryKey: ['/api/payrolls', payrollId],
+    queryKey: [`http://localhost:5000/api/payrolls/${payrollId}`, payrollId],
   });
+  
+
+
   
   const formattedDate = useMemo(() => {
     if (!payroll) return '';
@@ -27,6 +34,7 @@ export function Payslip({ payrollId }: PayslipProps) {
     return `${months[payroll.month - 1]} ${payroll.year}`;
   }, [payroll]);
   
+  console.log(payroll);
   const formatCurrency = (amount: number | string | null | undefined) => {
     if (amount === null || amount === undefined) return '$0.00';
     
@@ -40,9 +48,23 @@ export function Payslip({ payrollId }: PayslipProps) {
     window.print();
   };
   
-  const handleDownload = () => {
-    // In a real app, this would generate a PDF
-    alert('In a real app, this would download a PDF of the payslip.');
+  const handleDownload = async () => {
+    if (!divRef.current) return;
+  
+    const canvas = await html2canvas(divRef.current, {
+      scale: 2, // Improves quality
+      useCORS: true, // Handles external styles
+      backgroundColor: null, // Keeps background transparent
+    });
+  
+    const imageData = canvas.toDataURL("image/png");
+  
+    const pdf = new jsPDF("p", "mm", "a4");
+    const imgWidth = pdf.internal.pageSize.getWidth();
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+  
+    pdf.addImage(imageData, "PNG", 0, 10, imgWidth, imgHeight);
+    pdf.save(`${payroll.employee?.user?.firstName}_Payslip.pdf`);
   };
   
   if (isLoading) {
@@ -62,7 +84,7 @@ export function Payslip({ payrollId }: PayslipProps) {
   }
   
   return (
-    <Card className="w-full max-w-3xl mx-auto print:shadow-none">
+    <Card className="w-full max-w-3xl mx-auto print:shadow-none" ref={divRef}>
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
           <CardTitle className="text-2xl">Payslip</CardTitle>

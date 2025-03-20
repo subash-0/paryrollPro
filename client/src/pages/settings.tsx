@@ -36,7 +36,7 @@ export default function Settings() {
   
   // Fetch departments
   const { data: departments = [], isLoading: isDepartmentsLoading, refetch: refetchDepartments } = useQuery({
-    queryKey: ['/api/departments'],
+    queryKey: ['http://localhost:5000/api/departments'],
   });
   
   // Department form
@@ -55,7 +55,7 @@ export default function Settings() {
   // Create department mutation
   const createDepartmentMutation = useMutation({
     mutationFn: async (data: DepartmentFormValues) => {
-      await apiRequest('POST', '/api/departments', data);
+      await apiRequest('POST', 'http://localhost:5000/api/departments', data);
     },
     onSuccess: () => {
       toast({
@@ -66,7 +66,7 @@ export default function Settings() {
         name: '',
         description: '',
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/departments'] });
+      queryClient.invalidateQueries({ queryKey: ['http://localhost:5000/api/departments'] });
     },
     onError: (error) => {
       toast({
@@ -80,14 +80,14 @@ export default function Settings() {
   // Delete department mutation
   const deleteDepartmentMutation = useMutation({
     mutationFn: async (id: number) => {
-      await apiRequest('DELETE', `/api/departments/${id}`, {});
+      await apiRequest('DELETE', `http://localhost:5000/api/departments/${id}`, {});
     },
     onSuccess: () => {
       toast({
         title: "Department deleted",
         description: "The department has been deleted successfully.",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/departments'] });
+      queryClient.invalidateQueries({ queryKey: ['https://localhost:5000/api/departments'] });
     },
     onError: (error) => {
       toast({
@@ -145,7 +145,7 @@ export default function Settings() {
                     <Building className="h-4 w-4" />
                     <span className="hidden md:inline">Departments</span>
                   </TabsTrigger>
-                  <TabsTrigger value="users" className="flex items-center gap-2">
+                  {/* <TabsTrigger value="users" className="flex items-center gap-2">
                     <Users className="h-4 w-4" />
                     <span className="hidden md:inline">Users</span>
                   </TabsTrigger>
@@ -160,7 +160,7 @@ export default function Settings() {
                   <TabsTrigger value="backup" className="flex items-center gap-2">
                     <Database className="h-4 w-4" />
                     <span className="hidden md:inline">Backup</span>
-                  </TabsTrigger>
+                  </TabsTrigger> */}
                 </TabsList>
                 
                 <TabsContent value="departments" className="space-y-4">
