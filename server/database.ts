@@ -99,7 +99,7 @@ async function initDatabase() {
     if (adminCheck.rowCount === 0) {
       await client.query(`
         INSERT INTO users (username, password, first_name, last_name, email, role)
-        VALUES ('admin', '$2b$10$oQE/f1J.fbXILyzDhNB6tuUB6Z/ahB9wNUxfmCd0WE.XZ9gZe.m1i', 'Admin', 'User', 'admin@example.com', 'admin')
+        VALUES ('admin', '$2a$10$fviJooARV6U0WBEBmxepQOnp44mZlPF2x1Tr/h.D7VFhCbEu3CAx6', 'Admin', 'User', 'admin@example.com', 'admin')
       `);
     }
     
