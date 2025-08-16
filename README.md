@@ -35,6 +35,9 @@ flowchart TD
     A7 -- "Initializes" --> A1
 ```
 
+Visuals
+
+
 ## Chapters
 
 1. [Data Models & Validation
