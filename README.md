@@ -36,7 +36,13 @@ flowchart TD
 ```
 
 Visuals
-
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+  <img src="./payroll1.jpeg" alt="Image 1" style="width:100%; border-radius:8px;" />
+  <img src="./payroll2.jpeg" alt="Image 2" style="width:100%; border-radius:8px;" />
+  <img src="./payroll3.jpeg" alt="Image 3" style="width:100%; border-radius:8px;" />
+     <img src="./paryroll4.jpeg" alt="Image 3" style="width:100%; border-radius:8px;" />
+  <!-- add more images as needed -->
+</div>
 
 ## Chapters
 
